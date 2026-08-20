@@ -1,6 +1,9 @@
 ﻿import React, { useState, useRef, useEffect } from "react";
 import "./ChatIA.css";
 
+// Número da equipe ASINP para atendimento humano via WhatsApp
+const WHATSAPP_NUMBER = "5581999999999"; // TODO: ajustar para o número real da equipe
+
 const ChatIA = () => {
   const [messages, setMessages] = useState([
     {
@@ -12,11 +15,70 @@ const ChatIA = () => {
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(false);
+  const [speakReplies, setSpeakReplies] = useState(false);
   const messagesEndRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Configura reconhecimento de voz (fala -> texto), se o navegador suportar
+  useEffect(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setVoiceSupported(false);
+      return;
+    }
+    setVoiceSupported(true);
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "pt-BR";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setInputMessage((prev) => (prev ? prev + " " + transcript : transcript));
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+  }, []);
+
+  const toggleListening = () => {
+    if (!voiceSupported || !recognitionRef.current) return;
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  };
+
+  // Texto -> voz (lê a resposta em voz alta, útil para quem tem dificuldade de leitura)
+  const speakText = (text) => {
+    if (!window.speechSynthesis) return;
+    const clean = text.replace(
+      /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu,
+      ""
+    );
+    const utterance = new SpeechSynthesisUtterance(clean);
+    utterance.lang = "pt-BR";
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  };
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -50,19 +112,22 @@ const ChatIA = () => {
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, botMessage]);
+        if (speakReplies) speakText(data.response);
       } else {
         throw new Error(data.error || "Resposta inválida da API");
       }
     } catch (error) {
       console.error("Erro:", error);
 
+      const fallbackText = getOfflineResponse(messageToSend);
       const botMessage = {
         id: Date.now() + 1,
         type: "bot",
-        text: getOfflineResponse(messageToSend),
+        text: fallbackText,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMessage]);
+      if (speakReplies) speakText(fallbackText);
     } finally {
       setIsLoading(false);
     }
@@ -157,6 +222,13 @@ const ChatIA = () => {
     }
   };
 
+  const handleTalkToHuman = () => {
+    const text = encodeURIComponent(
+      "Olá! Vim pelo assistente virtual da ASINP e gostaria de falar com um profissional da equipe."
+    );
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${text}`, "_blank");
+  };
+
   return (
     <div className="chat-container">
       <div className="chat-header">
@@ -164,6 +236,13 @@ const ChatIA = () => {
           <h2 className="chat-title">🤖 Assistente Virtual ASINP</h2>
           <p className="chat-subtitle">Powered by Google Gemini 2.5 Flash ⚡</p>
         </div>
+        <button
+          className="chat-human-button"
+          onClick={handleTalkToHuman}
+          title="Falar com um profissional da equipe"
+        >
+          👩‍⚕️ Falar com profissional
+        </button>
       </div>
 
       <div className="chat-messages">
@@ -206,9 +285,23 @@ const ChatIA = () => {
       </div>
 
       <div className="chat-input-container">
+        {voiceSupported && (
+          <button
+            className={`chat-mic-button ${
+              isListening ? "chat-mic-active" : ""
+            }`}
+            onClick={toggleListening}
+            title={isListening ? "Parar gravação" : "Falar sua mensagem"}
+            type="button"
+          >
+            {isListening ? "🔴" : "🎤"}
+          </button>
+        )}
         <textarea
           className="chat-input"
-          placeholder="Digite sua mensagem..."
+          placeholder={
+            isListening ? "Ouvindo... fale agora" : "Digite sua mensagem..."
+          }
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
           onKeyPress={handleKeyPress}
@@ -226,6 +319,14 @@ const ChatIA = () => {
       </div>
 
       <div className="chat-footer">
+        <label className="chat-speak-toggle">
+          <input
+            type="checkbox"
+            checked={speakReplies}
+            onChange={(e) => setSpeakReplies(e.target.checked)}
+          />
+          🔊 Ler respostas em voz alta
+        </label>
         <p className="chat-footer-text">
           💡 Pergunte sobre horários, serviços, agendamentos e muito mais!
         </p>

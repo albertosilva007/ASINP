@@ -39,10 +39,10 @@ const HistoryIcon = (props) => (
 
 const SupportIcon = (props) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="5" r="3"/>
-    <path d="M6.5 8a6.5 6.5 0 1 1 11 0"/>
-    <path d="M12 11v10"/>
-    <path d="m8 15 4-2 4 2"/>
+    <circle cx="12" cy="5" r="3" />
+    <path d="M6.5 8a6.5 6.5 0 1 1 11 0" />
+    <path d="M12 11v10" />
+    <path d="m8 15 4-2 4 2" />
   </svg>
 );
 
@@ -52,12 +52,6 @@ const CalendarIcon = (props) => (
     <line x1="16" x2="16" y1="2" y2="6" />
     <line x1="8" x2="8" y1="2" y2="6" />
     <line x1="3" x2="21" y1="10" y2="10" />
-  </svg>
-);
-
-const FilterIcon = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
   </svg>
 );
 
@@ -80,11 +74,20 @@ const firebaseConfig = {
   measurementId: "G-J3T5JPN19W",
 };
 
+const VIDEO_FOLDERS = [
+  { name: "Fissura Labiopalatina", icon: "🧩", description: "Conteúdo introdutório sobre a condição." },
+  { name: "Nutrição", icon: "🍎", description: "Alimentação e receitas." },
+  { name: "Odontologia", icon: "🦷", description: "Cuidados bucais." },
+  { name: "Fonoaudiologia", icon: "🗣️", description: "Desenvolvimento da fala." },
+  { name: "Psicologia", icon: "💚", description: "Acolhimento emocional." },
+];
+
 const MOCK_VIDEOS = [
   {
     id: 1,
     title: "Fonoaudiologia na Fissura Labiopalatina",
     type: "Fonoaudiologia",
+    folder: "Fonoaudiologia",
     tags: ["fala", "fonoaudiologia", "reabilitação", "tratamento"],
     youtubeId: "wPE3atuMn7c",
     thumbnail: "https://img.youtube.com/vi/wPE3atuMn7c/mqdefault.jpg",
@@ -94,6 +97,7 @@ const MOCK_VIDEOS = [
     id: 2,
     title: "Cuidados Pós-Operatórios em Fissura Labiopalatina",
     type: "Pós-Cirúrgico",
+    folder: "Fissura Labiopalatina",
     tags: ["cirurgia", "recuperação", "cuidados", "pós-operatório"],
     youtubeId: "p1Q6jTyr2FU",
     thumbnail: "https://img.youtube.com/vi/p1Q6jTyr2FU/mqdefault.jpg",
@@ -103,6 +107,7 @@ const MOCK_VIDEOS = [
     id: 3,
     title: "Tratamento para Fissura Labiopalatina",
     type: "Tratamento",
+    folder: "Fissura Labiopalatina",
     tags: ["tratamento", "cirurgia", "reabilitação", "equipe multidisciplinar"],
     youtubeId: "IfCz5hNauIo",
     thumbnail: "https://img.youtube.com/vi/IfCz5hNauIo/mqdefault.jpg",
@@ -112,6 +117,7 @@ const MOCK_VIDEOS = [
     id: 4,
     title: "Alimentação em Crianças com Fissura Labiopalatina: Guia para Idades",
     type: "Alimentação",
+    folder: "Nutrição",
     tags: ["alimentação", "nutrição", "crianças", "desenvolvimento"],
     youtubeId: "-KePQ0sFzYI",
     thumbnail: "https://img.youtube.com/vi/-KePQ0sFzYI/mqdefault.jpg",
@@ -121,6 +127,7 @@ const MOCK_VIDEOS = [
     id: 5,
     title: "O Que é Fissura Labiopalatina?",
     type: "Educativo",
+    folder: "Fissura Labiopalatina",
     tags: ["informação", "diagnóstico", "causas", "tipos"],
     youtubeId: "Dz6OGVW3kRc",
     thumbnail: "https://img.youtube.com/vi/Dz6OGVW3kRc/mqdefault.jpg",
@@ -130,6 +137,7 @@ const MOCK_VIDEOS = [
     id: 6,
     title: "Nutrição Para Crianças com Fissura Labiopalatina",
     type: "Nutricional",
+    folder: "Nutrição",
     tags: ["nutrição", "dieta", "alimentação saudável", "desenvolvimento"],
     youtubeId: "n6E1s-ybQzg",
     thumbnail: "https://img.youtube.com/vi/n6E1s-ybQzg/mqdefault.jpg",
@@ -139,6 +147,7 @@ const MOCK_VIDEOS = [
     id: 7,
     title: "Higiene Bucal: Para Crianças Com Fissura Labiopalatina",
     type: "Higiene Bucal",
+    folder: "Odontologia",
     tags: ["higiene", "cuidados bucais", "limpeza", "saúde bucal"],
     youtubeId: "0enDhL-YZSY",
     thumbnail: "https://img.youtube.com/vi/0enDhL-YZSY/mqdefault.jpg",
@@ -148,6 +157,7 @@ const MOCK_VIDEOS = [
     id: 8,
     title: "Depoimentos de Famílias - Superação",
     type: "Depoimentos",
+    folder: "Fissura Labiopalatina",
     tags: ["depoimentos", "histórias reais", "superação", "esperança", "famílias"],
     youtubeId: "tNP3BSBv2F8",
     thumbnail: "https://img.youtube.com/vi/tNP3BSBv2F8/mqdefault.jpg",
@@ -483,7 +493,7 @@ const HomeScreen = ({ userId, appointments, onNavigate }) => {
             onClick={() => alert("🎯 Linha do Tempo:\n\n✓ Diagnóstico - Concluído\n★ 1ª Cirurgia - Fase Atual\n○ Fono/Acompanhamento - Próxima fase\n\nEm breve você poderá editar essas fases!")}>
             <h2 className="text-lg lg:text-xl font-semibold text-asinp-verde mb-4 flex items-center">
               <span className="mr-2">🎯</span> Linha do Tempo
-              <span className="ml-auto text-xs bg-asinp-amarelo text-white px-3 py-1 rounded-full">Clique</span>      
+              <span className="ml-auto text-xs bg-asinp-amarelo text-white px-3 py-1 rounded-full">Clique</span>
             </h2>
             <div className="flex justify-between items-center mb-4">
               <TimelineStep label="Diagnóstico" active={true} />
@@ -507,25 +517,25 @@ const HomeScreen = ({ userId, appointments, onNavigate }) => {
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => onNavigate('history')}
-                className="bg-white/20 hover:bg-white/30 text-white p-3 lg:p-4 rounded-xl transition-all backdrop-blur-sm font-semibold text-sm lg:text-base" 
+                className="bg-white/20 hover:bg-white/30 text-white p-3 lg:p-4 rounded-xl transition-all backdrop-blur-sm font-semibold text-sm lg:text-base"
               >
                 📋 Adicionar<br />Procedimento
               </button>
               <button
                 onClick={() => onNavigate('videos')}
-                className="bg-white/20 hover:bg-white/30 text-white p-3 lg:p-4 rounded-xl transition-all backdrop-blur-sm font-semibold text-sm lg:text-base" 
+                className="bg-white/20 hover:bg-white/30 text-white p-3 lg:p-4 rounded-xl transition-all backdrop-blur-sm font-semibold text-sm lg:text-base"
               >
                 🎥 Ver<br />Vídeos
               </button>
               <button
                 onClick={() => onNavigate('support')}
-                className="bg-white/20 hover:bg-white/30 text-white p-3 lg:p-4 rounded-xl transition-all backdrop-blur-sm font-semibold text-sm lg:text-base" 
+                className="bg-white/20 hover:bg-white/30 text-white p-3 lg:p-4 rounded-xl transition-all backdrop-blur-sm font-semibold text-sm lg:text-base"
               >
                 💬 Falar com<br />Equipe
               </button>
               <button
                 onClick={() => alert("📊 Relatórios em desenvolvimento!\n\nEm breve você poderá ver:\n• Progresso do tratamento\n• Histórico completo\n• Estatísticas")}
-                className="bg-white/20 hover:bg-white/30 text-white p-3 lg:p-4 rounded-xl transition-all backdrop-blur-sm font-semibold text-sm lg:text-base" 
+                className="bg-white/20 hover:bg-white/30 text-white p-3 lg:p-4 rounded-xl transition-all backdrop-blur-sm font-semibold text-sm lg:text-base"
               >
                 📊 Ver<br />Relatórios
               </button>
@@ -589,16 +599,17 @@ const HomeScreen = ({ userId, appointments, onNavigate }) => {
 const HistoryScreen = ({ medicalRecords, db, userId }) => {
   const [newRecordType, setNewRecordType] = useState("Consulta");
   const [newRecordDesc, setNewRecordDesc] = useState("");
+  const [newRecordDate, setNewRecordDate] = useState(new Date().toISOString().split("T")[0]);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAddRecord = async () => {
-    if (!newRecordDesc || !userId) return;
+    if (!newRecordDesc || !newRecordDate || !userId) return;
     setIsLoading(true);
 
     const newProcedure = {
       type: newRecordType,
       description: newRecordDesc,
-      date: new Date().toISOString().split("T")[0],
+      date: newRecordDate,
       createdAt: serverTimestamp(),
     };
 
@@ -606,6 +617,7 @@ const HistoryScreen = ({ medicalRecords, db, userId }) => {
       const docRef = doc(db, getMedicalRecordPath(userId), "procedures");
       await setDoc(docRef, { records: arrayUnion(newProcedure) }, { merge: true });
       setNewRecordDesc("");
+      setNewRecordDate(new Date().toISOString().split("T")[0]);
     } catch (e) {
       console.error("Erro:", e);
     } finally {
@@ -632,6 +644,13 @@ const HistoryScreen = ({ medicalRecords, db, userId }) => {
             <option key={type} value={type}>{type}</option>
           ))}
         </select>
+        <label className="block text-sm font-medium text-gray-600 mb-1">Data solicitada pelo paciente</label>
+        <input
+          type="date"
+          value={newRecordDate}
+          onChange={(e) => setNewRecordDate(e.target.value)}
+          className="w-full p-4 border-2 border-gray-200 rounded-xl mb-3 focus:ring-2 focus:ring-asinp-verde focus:border-asinp-verde transition-all"
+        />
         <textarea
           value={newRecordDesc}
           onChange={(e) => setNewRecordDesc(e.target.value)}
@@ -641,7 +660,7 @@ const HistoryScreen = ({ medicalRecords, db, userId }) => {
         ></textarea>
         <button
           onClick={handleAddRecord}
-          disabled={isLoading || !newRecordDesc}
+          disabled={isLoading || !newRecordDesc || !newRecordDate}
           className="w-full bg-gradient-to-r from-asinp-verde to-asinp-verde hover:from-asinp-verde hover:to-asinp-verde text-white font-semibold py-4 rounded-xl transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
         >
           {isLoading ? "Salvando..." : "💾 Salvar Procedimento"}
@@ -675,24 +694,24 @@ const HistoryScreen = ({ medicalRecords, db, userId }) => {
 };
 
 const VideosScreen = () => {
-  const [selectedType, setSelectedType] = useState("Todos");
+  const [selectedFolder, setSelectedFolder] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [playingVideo, setPlayingVideo] = useState(null);
-
-  const allTypes = useMemo(() => {
-    const types = [...new Set(MOCK_VIDEOS.map((v) => v.type))];
-    return types.sort();
-  }, []);
 
   const filteredVideos = useMemo(() => {
     return MOCK_VIDEOS.filter((video) => {
-      const matchesType = selectedType === "Todos" || video.type === selectedType;
+      const matchesFolder = !selectedFolder || video.folder === selectedFolder;
       const matchesSearch = video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          video.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-      return matchesType && matchesSearch;
+        video.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+      return matchesFolder && matchesSearch;
     });
-  }, [selectedType, searchTerm]);
+  }, [selectedFolder, searchTerm]);
+
+  const videoCountByFolder = useMemo(() => {
+    const counts = {};
+    MOCK_VIDEOS.forEach((v) => { counts[v.folder] = (counts[v.folder] || 0) + 1; });
+    return counts;
+  }, []);
 
   const handleWatchVideo = (video) => {
     setPlayingVideo(video);
@@ -706,11 +725,11 @@ const VideosScreen = () => {
     <div className="flex flex-col h-full bg-white">
       {/* Modal de Vídeo */}
       {playingVideo && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
           onClick={closeVideo}
         >
-          <div 
+          <div
             className="bg-white rounded-2xl overflow-hidden max-w-4xl w-full max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
@@ -724,7 +743,7 @@ const VideosScreen = () => {
                 <XIcon className="w-6 h-6" />
               </button>
             </div>
-            
+
             {/* Player do Vídeo */}
             <div className="relative pt-[56.25%] bg-black">
               <iframe
@@ -736,7 +755,7 @@ const VideosScreen = () => {
                 allowFullScreen
               ></iframe>
             </div>
-            
+
             {/* Informações do Vídeo */}
             <div className="p-6 overflow-y-auto">
               <p className="text-sm text-asinp-verde font-semibold mb-2">{playingVideo.type}</p>
@@ -755,14 +774,16 @@ const VideosScreen = () => {
 
       <div className="p-4 bg-white shadow-md sticky top-0 z-10">
         <div className="flex justify-between items-center mb-3">
-          <h1 className="text-2xl font-bold text-asinp-verde">🎥 Vídeos</h1>
-          <button
-            onClick={() => setShowFilters(true)}
-            className="bg-asinp-laranja text-white px-4 py-2 rounded-xl flex items-center space-x-2 hover:bg-asinp-amarelo transition-colors shadow-md"
-          >
-            <FilterIcon className="w-5 h-5" />
-            <span className="font-semibold">Filtros</span>
-          </button>
+          {selectedFolder ? (
+            <button
+              onClick={() => { setSelectedFolder(null); setSearchTerm(""); }}
+              className="flex items-center text-asinp-verde font-bold text-lg"
+            >
+              ← {selectedFolder}
+            </button>
+          ) : (
+            <h1 className="text-2xl font-bold text-asinp-verde">🎥 Vídeos Educativos</h1>
+          )}
         </div>
         <input
           type="text"
@@ -774,9 +795,26 @@ const VideosScreen = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {filteredVideos.length > 0 ? (
+        {!selectedFolder && !searchTerm ? (
+          <div className="grid grid-cols-2 gap-4">
+            {VIDEO_FOLDERS.map((folder) => (
+              <button
+                key={folder.name}
+                onClick={() => setSelectedFolder(folder.name)}
+                className="bg-white rounded-2xl shadow-lg p-5 text-left hover:shadow-xl transition-shadow border-2 border-transparent hover:border-asinp-verde"
+              >
+                <div className="text-4xl mb-2">{folder.icon}</div>
+                <h2 className="font-bold text-asinp-verde mb-1">{folder.name}</h2>
+                <p className="text-xs text-gray-500 mb-2">{folder.description}</p>
+                <span className="text-xs bg-green-50 text-asinp-verde px-3 py-1 rounded-full border border-asinp-verde">
+                  {videoCountByFolder[folder.name] || 0} vídeo{(videoCountByFolder[folder.name] || 0) === 1 ? "" : "s"}
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : filteredVideos.length > 0 ? (
           filteredVideos.map((video) => (
-            <div key={video.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow border-2 border-transparent hover:border-asinp-verde">   
+            <div key={video.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow border-2 border-transparent hover:border-asinp-verde">
               <img
                 src={video.thumbnail}
                 alt={video.title}
@@ -791,7 +829,7 @@ const VideosScreen = () => {
                 )}
                 <div className="flex flex-wrap gap-2 mb-3">
                   {video.tags.map((tag) => (
-                    <span key={tag} className="text-xs bg-green-50 text-asinp-verde px-3 py-1 rounded-full border border-asinp-verde"> 
+                    <span key={tag} className="text-xs bg-green-50 text-asinp-verde px-3 py-1 rounded-full border border-asinp-verde">
                       #{tag}
                     </span>
                   ))}
@@ -808,42 +846,12 @@ const VideosScreen = () => {
         ) : (
           <div className="text-center py-10 bg-white rounded-2xl shadow-md">
             <p className="text-gray-500 mb-2">📹 Nenhum vídeo encontrado</p>
-            <button onClick={() => { setSelectedType("Todos"); setSearchTerm(""); }} className="text-asinp-verde font-semibold hover:text-asinp-verde">   
-              Limpar Filtros
+            <button onClick={() => { setSelectedFolder(null); setSearchTerm(""); }} className="text-asinp-verde font-semibold hover:text-asinp-verde">
+              Ver todas as pastas
             </button>
           </div>
         )}
       </div>
-
-      {showFilters && (
-        <div className="fixed inset-0 bg-black/50 flex items-end z-20">
-          <div className="bg-white w-full p-6 rounded-t-3xl shadow-2xl max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-asinp-verde">🎯 Filtros</h2>
-              <button onClick={() => setShowFilters(false)} className="p-2 hover:bg-gray-100 rounded-full">
-                <XIcon className="w-6 h-6" />
-              </button>
-            </div>
-            <h3 className="font-semibold mb-3">Categoria</h3>
-            <select
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className="w-full p-4 border-2 border-gray-200 rounded-xl mb-6 focus:ring-2 focus:ring-asinp-verde"
-            >
-              <option value="Todos">Todas</option>
-              {allTypes.map((type) => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
-            <button
-              onClick={() => setShowFilters(false)}
-              className="w-full bg-gradient-to-r from-asinp-verde to-asinp-verde text-white font-semibold py-4 rounded-xl hover:from-asinp-verde hover:to-asinp-verde transition-all shadow-lg"
-            >
-              Aplicar Filtros
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -934,11 +942,10 @@ export default function App() {
   const SidebarButton = ({ icon: Icon, label, current, onClick }) => (
     <button
       onClick={onClick}
-      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${
-        current 
-          ? "bg-green-50 text-asinp-verde font-semibold shadow-sm" 
+      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all ${current
+          ? "bg-green-50 text-asinp-verde font-semibold shadow-sm"
           : "text-gray-600 hover:bg-gray-50"
-      }`}
+        }`}
     >
       <Icon className="w-6 h-6" />
       <span>{label}</span>
@@ -948,7 +955,7 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen w-full bg-gray-50">
       {/* Header - Responsivo */}
-      <div className="bg-asinp-azul px-4 lg:px-12 py-3 lg:py-5 flex justify-between items-center shadow-lg">        
+      <div className="bg-asinp-azul px-4 lg:px-12 py-3 lg:py-5 flex justify-between items-center shadow-lg">
         <div>
           <h1 className="text-lg lg:text-2xl text-white font-bold">APP ASINP APOIO</h1>
           <p className="text-white/90 text-xs lg:text-sm">Plataforma de Apoio</p>
@@ -970,40 +977,40 @@ export default function App() {
             <h2 className="text-asinp-verde font-bold text-xl mb-1">Menu</h2>
             <p className="text-gray-500 text-sm">Navegação principal</p>
           </div>
-          
+
           <div className="space-y-2 flex-1">
-            <SidebarButton 
-              icon={HomeIcon} 
-              label="Início" 
-              current={currentPage === "home"} 
-              onClick={() => setCurrentPage("home")} 
+            <SidebarButton
+              icon={HomeIcon}
+              label="Início"
+              current={currentPage === "home"}
+              onClick={() => setCurrentPage("home")}
             />
-            <SidebarButton 
-              icon={HistoryIcon} 
-              label="Histórico Médico" 
-              current={currentPage === "history"} 
-              onClick={() => setCurrentPage("history")} 
+            <SidebarButton
+              icon={HistoryIcon}
+              label="Histórico Médico"
+              current={currentPage === "history"}
+              onClick={() => setCurrentPage("history")}
             />
-            <SidebarButton 
-              icon={VideoIcon} 
-              label="Vídeos Educativos" 
-              current={currentPage === "videos"} 
-              onClick={() => setCurrentPage("videos")} 
+            <SidebarButton
+              icon={VideoIcon}
+              label="Vídeos Educativos"
+              current={currentPage === "videos"}
+              onClick={() => setCurrentPage("videos")}
             />
-            <SidebarButton 
-              icon={SupportIcon} 
-              label="Chat de Apoio" 
-              current={currentPage === "support"} 
-              onClick={() => setCurrentPage("support")} 
+            <SidebarButton
+              icon={SupportIcon}
+              label="Chat de Apoio"
+              current={currentPage === "support"}
+              onClick={() => setCurrentPage("support")}
             />
           </div>
-          
+
           <div className="mt-6 p-4 bg-green-50 rounded-xl border border-asinp-verde/20">
             <p className="text-xs text-gray-600 mb-2 font-semibold">💡 Dica do Dia</p>
             <p className="text-sm text-gray-700">Explore os vídeos educativos para aprender mais!</p>
           </div>
         </nav>
-        
+
         {/* Conteúdo Principal Desktop */}
         <div className="flex-1 overflow-hidden bg-gray-50">{renderContent()}</div>
       </div>
@@ -1014,7 +1021,7 @@ export default function App() {
       {/* Navegação Inferior - Apenas Mobile */}
       <nav className="lg:hidden bg-white border-t-2 border-gray-200 p-3 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
         <div className="flex justify-around">
-          <NavItem icon={HomeIcon} label="Início" current={currentPage === "home"} onClick={() => setCurrentPage("home")} />   
+          <NavItem icon={HomeIcon} label="Início" current={currentPage === "home"} onClick={() => setCurrentPage("home")} />
           <NavItem icon={HistoryIcon} label="Histórico" current={currentPage === "history"} onClick={() => setCurrentPage("history")} />
           <NavItem icon={VideoIcon} label="Vídeos" current={currentPage === "videos"} onClick={() => setCurrentPage("videos")} />
           <NavItem icon={SupportIcon} label="Apoio" current={currentPage === "support"} onClick={() => setCurrentPage("support")} />
