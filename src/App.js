@@ -228,7 +228,7 @@ const LoginScreen = ({ auth, onSwitchToRegister }) => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gray-50 flex items-center justify-center p-4 pt-12 overflow-y-auto">
+    <div className="min-h-screen w-full bg-gray-50 flex items-start justify-center p-4 pt-16 overflow-y-auto">
       <div className="w-full max-w-md">
         {/* Logo e Título */}
         <div className="text-center mb-8 animate-fade-in">
@@ -364,7 +364,7 @@ const RegisterScreen = ({ auth, db, onSwitchToLogin }) => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gray-50 flex items-center justify-center p-4 pt-12 overflow-y-auto">
+    <div className="min-h-screen w-full bg-gray-50 flex items-start justify-center p-4 pt-16 overflow-y-auto">
       <div className="w-full max-w-md my-8">
         {/* Logo e Título */}
         <div className="text-center mb-8 animate-fade-in">
