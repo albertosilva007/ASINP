@@ -1,0 +1,875 @@
+import React, { useState, useEffect, useMemo } from "react";
+import { initializeApp } from "firebase/app";
+import {
+  getAuth,
+  signInAnonymously,
+  onAuthStateChanged,
+} from "firebase/auth";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  onSnapshot,
+  serverTimestamp,
+  arrayUnion,
+} from "firebase/firestore";
+import ChatIA from './components/ChatIA';
+
+// Ícones SVG
+const HomeIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
+  </svg>
+);
+
+const VideoIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m22 8-6 4 6 4V8Z" />
+    <path d="M14 15V9c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2Z" />
+  </svg>
+);
+
+const HistoryIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </svg>
+);
+
+const SupportIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2a10 10 0 0 0-9.22 6.8c1.7.5 3.3.8 4.7 1.2s2.5.8 3.5 1.5c.8.5 1.4 1.2 1.8 2.1l-.8 1.4A4 4 0 0 0 12 19c.4 0 .8-.1 1.2-.4.4-.3.7-.6 1.1-1.2.4-.6.8-1 1.4-1.2l1-.4c.3 0 .7.1 1.2.2 2.6.4 4.8 1.5 6.4 3.1A10 10 0 0 0 12 2Z" />
+  </svg>
+);
+
+const CalendarIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+    <line x1="16" x2="16" y1="2" y2="6" />
+    <line x1="8" x2="8" y1="2" y2="6" />
+    <line x1="3" x2="21" y1="10" y2="10" />
+  </svg>
+);
+
+const FilterIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+  </svg>
+);
+
+const XIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </svg>
+);
+
+const appId = "cuidafissura-app";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAa9IofAyiRYwApZF5V0w86HwO-3Js4SXo",
+  authDomain: "cuidafissura-app.firebaseapp.com",
+  projectId: "cuidafissura-app",
+  storageBucket: "cuidafissura-app.firebasestorage.app",
+  messagingSenderId: "362489216538",
+  appId: "1:362489216538:web:fc7b0d823f9f35a7599ba3",
+  measurementId: "G-J3T5JPN19W",
+};
+
+const MOCK_VIDEOS = [
+  {
+    id: 1,
+    title: "Alimentação de Bebê com Fissura Labiopalatina",
+    type: "Alimentação",
+    tags: ["amamentação", "mamadeira", "recém-nascido"],
+    youtubeId: "dQw4w9WgXcQ",
+    thumbnail: "http://googleusercontent.com/generated_video_content/1093171844733519257",
+    description: "Orientações sobre como alimentar bebês com fissura labiopalatina, posições adequadas e técnicas de amamentação."
+  },
+  {
+    id: 2,
+    title: "O que é Fissura Labiopalatina?",
+    type: "Educativo",
+    tags: ["diagnóstico", "tratamento", "informação"],
+    youtubeId: "dQw4w9WgXcQ",
+    thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg",
+    description: "Explicação completa sobre fissura labiopalatina, causas, tipos e tratamentos disponíveis."
+  },
+  {
+    id: 3,
+    title: "Fonoaudiologia e Fissura Palatina",
+    type: "Fonoaudiologia",
+    tags: ["fala", "exercícios", "reabilitação"],
+    youtubeId: "dQw4w9WgXcQ",
+    thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg",
+    description: "Exercícios fonoaudiológicos para desenvolvimento da fala em crianças com fissura palatina."
+  },
+  {
+    id: 4,
+    title: "Cuidados Pós-Cirúrgicos em Fissura",
+    type: "Pós-Cirúrgico",
+    tags: ["cirurgia", "recuperação", "cuidados"],
+    youtubeId: "dQw4w9WgXcQ",
+    thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg",
+    description: "Orientações sobre alimentação, higiene e cuidados após cirurgia de fissura labiopalatina."
+  },
+  {
+    id: 5,
+    title: "Higiene Bucal em Bebês com Fissura",
+    type: "Higiene Bucal",
+    tags: ["limpeza", "cuidados bucais", "bebês"],
+    youtubeId: "dQw4w9WgXcQ",
+    thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg",
+    description: "Como realizar a higiene bucal correta em bebês com fissura labiopalatina."
+  },
+  {
+    id: 6,
+    title: "Cirurgia de Fissura Labial - Antes e Depois",
+    type: "Cirurgia",
+    tags: ["queiloplastia", "cirurgia", "resultados"],
+    youtubeId: "dQw4w9WgXcQ",
+    thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg",
+    description: "Processo cirúrgico da correção de fissura labial e resultados do tratamento."
+  },
+  {
+    id: 7,
+    title: "Nutrição para Crianças com Fissura",
+    type: "Nutricional",
+    tags: ["nutrição", "dieta", "desenvolvimento"],
+    youtubeId: "dQw4w9WgXcQ",
+    thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg",
+    description: "Orientações nutricionais e receitas adequadas para crianças com fissura labiopalatina."
+  },
+  {
+    id: 8,
+    title: "Depoimentos de Famílias - Superação",
+    type: "Depoimentos",
+    tags: ["histórias", "superação", "esperança"],
+    youtubeId: "dQw4w9WgXcQ",
+    thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg",
+    description: "Histórias inspiradoras de famílias que passaram pelo tratamento de fissura labiopalatina."
+  },
+];
+
+const MOCK_APPOINTMENTS = [
+  { id: 101, type: "Consulta", specialist: "Fonoaudiólogo", date: "2025-12-05", time: "14:00" },
+  { id: 102, type: "Exame", specialist: "Radiologia", date: "2025-12-18", time: "09:30" },
+  { id: 103, type: "Cirurgia", specialist: "Plástica", date: "2026-01-20", time: "07:00" },
+];
+
+const getMedicalRecordPath = (userId) => `artifacts/${appId}/users/${userId}/medical_records`;
+
+const LoginScreen = ({ auth, onSwitchToRegister }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const { signInWithEmailAndPassword } = await import("firebase/auth");
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error("Erro no login:", error);
+      if (error.code === "auth/user-not-found") {
+        setError("Usuário não encontrado. Crie uma conta primeiro!");
+      } else if (error.code === "auth/wrong-password") {
+        setError("Senha incorreta. Tente novamente.");
+      } else if (error.code === "auth/invalid-email") {
+        setError("Email inválido.");
+      } else if (error.code === "auth/invalid-credential") {
+        setError("Email ou senha incorretos.");
+      } else {
+        setError("Erro ao fazer login. Tente novamente.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAnonymousLogin = async () => {
+    setIsLoading(true);
+    try {
+      await signInAnonymously(auth);
+    } catch (error) {
+      console.error("Erro:", error);
+      setError("Erro ao entrar como visitante.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full p-6 bg-gradient-to-br from-teal-50 to-blue-50 overflow-y-auto">
+      <div className="text-center mb-8">
+        <div className="w-20 h-20 bg-teal-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg animate-pulse">
+          <span className="text-4xl">🏥</span>
+        </div>
+        <h1 className="text-4xl font-bold text-teal-600 mb-2">CuidaFissura</h1>
+        <p className="text-gray-600 text-sm">Bem-vindo de volta!</p>
+      </div>
+
+      <form onSubmit={handleLogin} className="w-full max-w-sm space-y-4">
+        {error && (
+          <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm animate-shake">
+            ⚠️ {error}
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="seu@email.com"
+            required
+            className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Senha</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            required
+            className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-semibold py-4 px-6 rounded-2xl shadow-xl transition duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? "Entrando..." : "🔐 Entrar"}
+        </button>
+      </form>
+
+      <div className="w-full max-w-sm mt-4 space-y-3">
+        <button
+          onClick={handleAnonymousLogin}
+          disabled={isLoading}
+          className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-2xl transition duration-300 disabled:opacity-50"
+        >
+          👤 Entrar como Visitante
+        </button>
+
+        <button
+          onClick={onSwitchToRegister}
+          className="w-full text-teal-600 font-semibold py-3 hover:text-teal-700 transition-colors"
+        >
+          Não tem conta? <span className="underline">Criar conta</span>
+        </button>
+      </div>
+
+      <p className="mt-6 text-xs text-gray-500 text-center max-w-xs">
+        🔒 Seus dados estão protegidos e criptografados
+      </p>
+    </div>
+  );
+};
+
+const RegisterScreen = ({ auth, db, onSwitchToLogin }) => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (password.length < 6) {
+      setError("A senha deve ter no mínimo 6 caracteres.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("As senhas não coincidem.");
+      return;
+    }
+
+    if (name.length < 3) {
+      setError("Nome deve ter no mínimo 3 caracteres.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { createUserWithEmailAndPassword, updateProfile } = await import("firebase/auth");
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(userCredential.user, { displayName: name });
+      await setDoc(doc(db, `users/${userCredential.user.uid}`), {
+        name: name,
+        email: email,
+        createdAt: serverTimestamp(),
+        role: "patient"
+      });
+    } catch (error) {
+      console.error("Erro no cadastro:", error);
+      if (error.code === "auth/email-already-in-use") {
+        setError("Este email já está cadastrado. Faça login!");
+      } else if (error.code === "auth/invalid-email") {
+        setError("Email inválido.");
+      } else if (error.code === "auth/weak-password") {
+        setError("Senha muito fraca. Use pelo menos 6 caracteres.");
+      } else {
+        setError("Erro ao criar conta. Tente novamente.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full p-6 bg-gradient-to-br from-teal-50 to-blue-50 overflow-y-auto">
+      <div className="text-center mb-6 mt-4">
+        <div className="w-20 h-20 bg-teal-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+          <span className="text-4xl">👤</span>
+        </div>
+        <h1 className="text-3xl font-bold text-teal-600 mb-2">Criar Conta</h1>
+        <p className="text-gray-600 text-sm">Junte-se à nossa comunidade!</p>
+      </div>
+
+      <form onSubmit={handleRegister} className="w-full max-w-sm space-y-4">
+        {error && (
+          <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+            ⚠️ {error}
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Nome Completo</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="João Silva"
+            required
+            className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="seu@email.com"
+            required
+            className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Senha</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Mínimo 6 caracteres"
+            required
+            className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Confirmar Senha</label>
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Digite a senha novamente"
+            required
+            className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-semibold py-4 px-6 rounded-2xl shadow-xl transition duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? "Criando conta..." : "✨ Criar Conta"}
+        </button>
+      </form>
+
+      <button
+        onClick={onSwitchToLogin}
+        className="w-full max-w-sm mt-4 text-teal-600 font-semibold py-3 hover:text-teal-700 transition-colors mb-4"
+      >
+        Já tem conta? <span className="underline">Fazer login</span>
+      </button>
+    </div>
+  );
+};
+
+const AuthScreen = ({ auth, db }) => {
+  const [showRegister, setShowRegister] = useState(false);
+
+  return showRegister ? (
+    <RegisterScreen
+      auth={auth}
+      db={db}
+      onSwitchToLogin={() => setShowRegister(false)}
+    />
+  ) : (
+    <LoginScreen
+      auth={auth}
+      onSwitchToRegister={() => setShowRegister(true)}
+    />
+  );
+};
+
+const TimelineStep = ({ label, active, current }) => (
+  <div className="flex flex-col items-center">
+    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${current ? "bg-teal-500 text-white shadow-lg scale-110" : active ? "bg-teal-400 text-white" : "bg-gray-300 text-gray-500"}`}>
+      {current ? "★" : active ? "✓" : "○"}
+    </div>
+    <span className="text-xs mt-2 text-center max-w-[70px] leading-tight font-medium">{label}</span>
+  </div>
+);
+
+const HomeScreen = ({ userId, appointments, onNavigate }) => {
+  const [showAllAppointments, setShowAllAppointments] = useState(false);
+
+  return (
+    <div className="h-full overflow-y-auto bg-gradient-to-b from-teal-50 to-white">
+      <div className="p-6">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6">Bem-vindo(a)! 👋</h1>
+
+        <div className="bg-white p-6 rounded-2xl shadow-lg mb-6 border border-teal-100 hover:shadow-xl transition-shadow cursor-pointer"
+          onClick={() => alert("🎯 Linha do Tempo:\n\n✓ Diagnóstico - Concluído\n★ 1ª Cirurgia - Fase Atual\n○ Fono/Acompanhamento - Próxima fase\n\nEm breve você poderá editar essas fases!")}>
+          <h2 className="text-xl font-semibold text-teal-600 mb-4 flex items-center">
+            <span className="mr-2">🎯</span> Linha do Tempo
+            <span className="ml-auto text-xs bg-teal-100 text-teal-700 px-3 py-1 rounded-full">Clique para detalhes</span>
+          </h2>
+          <div className="flex justify-between items-center mb-4">
+            <TimelineStep label="Diagnóstico" active={true} />
+            <div className="flex-grow h-1 bg-teal-200 mx-2 rounded"></div>
+            <TimelineStep label="1ª Cirurgia" active={true} current={true} />
+            <div className="flex-grow h-1 bg-gray-200 mx-2 rounded"></div>
+            <TimelineStep label="Fono/Acomp." active={false} />
+          </div>
+          <div className="bg-teal-50 p-4 rounded-xl border-l-4 border-teal-500">
+            <p className="text-sm text-gray-700">
+              <span className="font-semibold text-teal-700">Fase Atual:</span> Pós-operatório, foco na recuperação e nutrição adequada.
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-lg border border-yellow-100 mb-6">
+          <h2 className="text-xl font-semibold text-teal-600 mb-4 flex items-center">
+            <CalendarIcon className="w-6 h-6 mr-2" /> Próximos Compromissos
+          </h2>
+
+          {appointments.length > 0 ? (
+            <>
+              {(showAllAppointments ? appointments : appointments.slice(0, 2)).map((app) => (
+                <div
+                  key={app.id}
+                  className="border-l-4 border-yellow-500 p-4 bg-yellow-50 rounded-xl mb-3 hover:shadow-md hover:bg-yellow-100 transition-all cursor-pointer"
+                  onClick={() => {
+                    const confirmMsg = `📅 ${app.type}\n\nEspecialista: ${app.specialist}\nData: ${new Date(app.date).toLocaleDateString("pt-BR")}\nHorário: ${app.time}\n\nDeseja adicionar um lembrete?`;
+                    if (window.confirm(confirmMsg)) {
+                      alert("✅ Lembrete configurado!\n\nVocê receberá uma notificação 1 dia antes.");
+                    }
+                  }}
+                >
+                  <p className="font-bold text-gray-800 text-lg">{app.type}</p>
+                  <p className="text-gray-600 text-sm">{app.specialist}</p>
+                  <p className="text-sm text-gray-500 mt-1 flex items-center">
+                    <CalendarIcon className="w-4 h-4 mr-1" />
+                    {new Date(app.date).toLocaleDateString("pt-BR")} às {app.time}
+                  </p>
+                  <button className="mt-2 text-xs bg-yellow-500 text-white px-3 py-1 rounded-full hover:bg-yellow-600 transition-colors">
+                    Adicionar Lembrete
+                  </button>
+                </div>
+              ))}
+
+              {appointments.length > 2 && (
+                <button
+                  onClick={() => setShowAllAppointments(!showAllAppointments)}
+                  className="w-full text-sm text-teal-600 font-semibold hover:text-teal-700 transition-colors py-2 bg-teal-50 rounded-xl hover:bg-teal-100"
+                >
+                  {showAllAppointments ? "▲ Ver Menos" : `▼ Ver Todos (${appointments.length} compromissos)`}
+                </button>
+              )}
+            </>
+          ) : (
+            <p className="text-gray-500 text-center py-4">Nenhum compromisso agendado.</p>
+          )}
+        </div>
+
+        <div className="bg-gradient-to-r from-teal-500 to-teal-600 p-6 rounded-2xl shadow-lg mb-6">
+          <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
+            ⚡ Ações Rápidas
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => onNavigate('history')}
+              className="bg-white/20 hover:bg-white/30 text-white p-4 rounded-xl transition-all backdrop-blur-sm font-semibold"
+            >
+              📋 Adicionar<br />Procedimento
+            </button>
+            <button
+              onClick={() => onNavigate('videos')}
+              className="bg-white/20 hover:bg-white/30 text-white p-4 rounded-xl transition-all backdrop-blur-sm font-semibold"
+            >
+              🎥 Ver<br />Vídeos
+            </button>
+            <button
+              onClick={() => onNavigate('support')}
+              className="bg-white/20 hover:bg-white/30 text-white p-4 rounded-xl transition-all backdrop-blur-sm font-semibold"
+            >
+              💬 Falar com<br />Equipe
+            </button>
+            <button
+              onClick={() => alert("📊 Relatórios em desenvolvimento!\n\nEm breve você poderá ver:\n• Progresso do tratamento\n• Histórico completo\n• Estatísticas")}
+              className="bg-white/20 hover:bg-white/30 text-white p-4 rounded-xl transition-all backdrop-blur-sm font-semibold"
+            >
+              📊 Ver<br />Relatórios
+            </button>
+          </div>
+        </div>
+
+        <div className="h-20"></div>
+      </div>
+    </div>
+  );
+};
+
+const HistoryScreen = ({ medicalRecords, db, userId }) => {
+  const [newRecordType, setNewRecordType] = useState("Consulta");
+  const [newRecordDesc, setNewRecordDesc] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleAddRecord = async () => {
+    if (!newRecordDesc || !userId) return;
+    setIsLoading(true);
+
+    const newProcedure = {
+      type: newRecordType,
+      description: newRecordDesc,
+      date: new Date().toISOString().split("T")[0],
+      createdAt: serverTimestamp(),
+    };
+
+    try {
+      const docRef = doc(db, getMedicalRecordPath(userId), "procedures");
+      await setDoc(docRef, { records: arrayUnion(newProcedure) }, { merge: true });
+      setNewRecordDesc("");
+    } catch (e) {
+      console.error("Erro:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const sortedRecords = useMemo(() => {
+    return [...(medicalRecords || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [medicalRecords]);
+
+  return (
+    <div className="p-6 overflow-y-auto bg-gradient-to-b from-teal-50 to-white min-h-full">
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">📋 Histórico Médico</h1>
+
+      <div className="bg-white p-6 rounded-2xl shadow-lg mb-6 border border-teal-100">
+        <h2 className="text-xl font-semibold text-teal-600 mb-4">Adicionar Procedimento</h2>
+        <select
+          value={newRecordType}
+          onChange={(e) => setNewRecordType(e.target.value)}
+          className="w-full p-4 border-2 border-gray-200 rounded-xl mb-3 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+        >
+          {["Consulta", "Exame", "Laudo", "Cirurgia", "Medicação"].map((type) => (
+            <option key={type} value={type}>{type}</option>
+          ))}
+        </select>
+        <textarea
+          value={newRecordDesc}
+          onChange={(e) => setNewRecordDesc(e.target.value)}
+          placeholder="Descreva o procedimento..."
+          rows="3"
+          className="w-full p-4 border-2 border-gray-200 rounded-xl mb-3 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+        ></textarea>
+        <button
+          onClick={handleAddRecord}
+          disabled={isLoading || !newRecordDesc}
+          className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-semibold py-4 rounded-xl transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+        >
+          {isLoading ? "Salvando..." : "💾 Salvar Procedimento"}
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold text-gray-700">Registros Anteriores</h2>
+        {sortedRecords.length > 0 ? (
+          sortedRecords.map((record, index) => (
+            <div key={index} className="bg-white p-5 rounded-2xl shadow-md border-l-4 border-teal-400 hover:shadow-lg transition-shadow">
+              <div className="flex justify-between items-start mb-2">
+                <span className="font-bold text-xl text-teal-700">{record.type}</span>
+                <span className="text-xs bg-teal-100 text-teal-700 px-3 py-1 rounded-full">
+                  {record.date ? new Date(record.date).toLocaleDateString("pt-BR") : "Data Indefinida"}
+                </span>
+              </div>
+              <p className="text-gray-600">{record.description}</p>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-10 bg-gray-50 rounded-2xl">
+            <p className="text-gray-500 mb-3">📝 Nenhum registro encontrado</p>
+            <p className="text-sm text-gray-400">Adicione o primeiro procedimento acima!</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const VideosScreen = () => {
+  const allTypes = useMemo(() => [...new Set(MOCK_VIDEOS.map((v) => v.type))], []);
+  const [selectedType, setSelectedType] = useState("Todos");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+
+  const filteredVideos = useMemo(() => {
+    return MOCK_VIDEOS.filter((video) => {
+      const typeMatch = selectedType === "Todos" || video.type === selectedType;
+      const searchMatch = video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        video.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      return typeMatch && searchMatch;
+    });
+  }, [selectedType, searchTerm]);
+
+  const handleWatchVideo = (youtubeId) => {
+    window.open(`https://www.youtube.com/watch?v=${youtubeId}`, '_blank');
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-gray-50">
+      <header className="p-6 bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg sticky top-0 z-10">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold">📚 Biblioteca</h1>
+            <p className="text-sm text-teal-100">Conteúdos Educativos</p>
+          </div>
+          <button
+            onClick={() => setShowFilters(true)}
+            className="p-3 bg-white/20 rounded-xl hover:bg-white/30 transition-all"
+          >
+            <FilterIcon className="w-6 h-6" />
+          </button>
+        </div>
+      </header>
+
+      <div className="p-4 bg-white shadow-sm sticky top-[88px] z-10">
+        <input
+          type="text"
+          placeholder="🔍 Buscar vídeos..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
+        />
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {filteredVideos.length > 0 ? (
+          filteredVideos.map((video) => (
+            <div key={video.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+              <img
+                src={video.thumbnail}
+                alt={video.title}
+                className="w-full h-48 object-cover cursor-pointer"
+                onClick={() => handleWatchVideo(video.youtubeId)}
+              />
+              <div className="p-5">
+                <h2 className="font-bold text-lg text-teal-700 mb-2">{video.title}</h2>
+                <p className="text-sm text-gray-500 mb-2">{video.type}</p>
+                {video.description && (
+                  <p className="text-sm text-gray-600 mb-3">{video.description}</p>
+                )}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {video.tags.map((tag) => (
+                    <span key={tag} className="text-xs bg-teal-50 text-teal-700 px-3 py-1 rounded-full border border-teal-200">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={() => handleWatchVideo(video.youtubeId)}
+                className="w-full bg-gradient-to-r from-teal-500 to-teal-600 text-white font-semibold py-4 hover:from-teal-600 hover:to-teal-700 transition-all"
+              >
+                ▶️ Assistir no YouTube
+              </button>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-10 bg-white rounded-2xl shadow-lg">
+            <p className="text-gray-500 mb-4">🔍 Nenhum vídeo encontrado</p>
+            <button onClick={() => { setSelectedType("Todos"); setSearchTerm(""); }} className="text-teal-600 font-semibold">
+              Limpar Filtros
+            </button>
+          </div>
+        )}
+      </div>
+
+      {showFilters && (
+        <div className="fixed inset-0 bg-black/50 flex items-end z-20">
+          <div className="bg-white w-full p-6 rounded-t-3xl shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-teal-600">🎯 Filtros</h2>
+              <button onClick={() => setShowFilters(false)} className="p-2 hover:bg-gray-100 rounded-full">
+                <XIcon className="w-6 h-6" />
+              </button>
+            </div>
+            <h3 className="font-semibold mb-3">Categoria</h3>
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className="w-full p-4 border-2 border-gray-200 rounded-xl mb-6 focus:ring-2 focus:ring-teal-500"
+            >
+              <option value="Todos">Todas</option>
+              {allTypes.map((type) => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => setShowFilters(false)}
+              className="w-full bg-gradient-to-r from-teal-500 to-teal-600 text-white font-semibold py-4 rounded-xl hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg"
+            >
+              Aplicar Filtros
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const SupportScreen = () => {
+  return <ChatIA />;
+};
+
+export default function App() {
+  const [db, setDb] = useState(null);
+  const [auth, setAuth] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [currentPage, setCurrentPage] = useState("home");
+  const [medicalRecords, setMedicalRecords] = useState([]);
+  const [appointments] = useState(MOCK_APPOINTMENTS);
+
+  useEffect(() => {
+    try {
+      const app = initializeApp(firebaseConfig);
+      const firestore = getFirestore(app);
+      const firebaseAuth = getAuth(app);
+      setDb(firestore);
+      setAuth(firebaseAuth);
+
+      const unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
+        if (user) setUserId(user.uid);
+        setIsAuthReady(true);
+      });
+
+      return () => unsubscribe();
+    } catch (e) {
+      console.error("Erro:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthReady || !userId || !db) return;
+    const docRef = doc(db, getMedicalRecordPath(userId), "procedures");
+
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists() && docSnap.data().records) {
+        setMedicalRecords(docSnap.data().records);
+      } else {
+        setMedicalRecords([]);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [isAuthReady, userId, db]);
+
+  const handleLogout = async () => {
+    if (auth) {
+      await auth.signOut();
+      setUserId(null);
+      setCurrentPage("home");
+    }
+  };
+
+  if (!isAuthReady || !userId) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        {auth && !userId ? <AuthScreen auth={auth} db={db} /> : <div className="text-gray-500">Carregando...</div>}
+      </div>
+    );
+  }
+
+  const renderContent = () => {
+    switch (currentPage) {
+      case "home": return <HomeScreen userId={userId} appointments={appointments} onNavigate={setCurrentPage} />;
+      case "history": return <HistoryScreen medicalRecords={medicalRecords} db={db} userId={userId} />;
+      case "videos": return <VideosScreen />;
+      case "support": return <SupportScreen />;
+      default: return <HomeScreen userId={userId} appointments={appointments} onNavigate={setCurrentPage} />;
+    }
+  };
+
+  const NavItem = ({ icon: Icon, label, current, onClick }) => (
+    <button
+      className={`flex flex-col items-center p-2 rounded-xl transition-all duration-200 ${current ? "text-teal-600 bg-teal-50" : "text-gray-500 hover:text-teal-500 hover:bg-gray-50"}`}
+      onClick={onClick}
+    >
+      <Icon className="w-7 h-7" />
+      <span className="text-xs mt-1 font-semibold">{label}</span>
+    </button>
+  );
+
+  return (
+    <div className="flex flex-col h-screen w-full max-w-md mx-auto border-8 border-gray-900 rounded-[3rem] overflow-hidden shadow-2xl bg-gray-100">
+      <div className="bg-gradient-to-r from-teal-500 to-teal-600 px-6 py-3 flex justify-between items-center shadow-lg">
+        <div>
+          <h1 className="text-white font-bold text-lg">CuidaFissura</h1>
+          <p className="text-teal-100 text-xs">Plataforma de Apoio</p>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center space-x-2"
+        >
+          <span>🚪</span>
+          <span>Sair</span>
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-hidden">{renderContent()}</div>
+
+      <nav className="bg-white border-t-2 border-gray-200 p-3 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+        <div className="flex justify-around">
+          <NavItem icon={HomeIcon} label="Início" current={currentPage === "home"} onClick={() => setCurrentPage("home")} />
+          <NavItem icon={HistoryIcon} label="Histórico" current={currentPage === "history"} onClick={() => setCurrentPage("history")} />
+          <NavItem icon={VideoIcon} label="Vídeos" current={currentPage === "videos"} onClick={() => setCurrentPage("videos")} />
+          <NavItem icon={SupportIcon} label="Apoio" current={currentPage === "support"} onClick={() => setCurrentPage("support")} />
+        </div>
+      </nav>
+    </div>
+  );
+}
