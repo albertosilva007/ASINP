@@ -173,6 +173,16 @@ const MOCK_APPOINTMENTS = [
 
 const getMedicalRecordPath = (userId) => `artifacts/${appId}/users/${userId}/medical_records`;
 
+const AsinpLogo = ({ size = "text-4xl" }) => (
+  <div className={`font-extrabold tracking-tight ${size}`}>
+    <span style={{ color: "#ff7b00" }}>A</span>
+    <span style={{ color: "#3575cc" }}>S</span>
+    <span style={{ color: "#278f37" }}>I</span>
+    <span style={{ color: "#ff7b00" }}>N</span>
+    <span style={{ color: "#3575cc" }}>P</span>
+  </div>
+);
+
 const LoginScreen = ({ auth, onSwitchToRegister }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -218,12 +228,12 @@ const LoginScreen = ({ auth, onSwitchToRegister }) => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen w-full bg-gray-50 flex items-center justify-center p-4 pt-12 overflow-y-auto">
       <div className="w-full max-w-md">
         {/* Logo e Título */}
         <div className="text-center mb-8 animate-fade-in">
-          <div className="w-24 h-24 bg-asinp-verde rounded-full mx-auto mb-6 flex items-center justify-center shadow-2xl animate-bounce-slow">
-            <span className="text-5xl">🏥</span>
+          <div className="mx-auto mb-4 flex items-center justify-center">
+            <AsinpLogo size="text-4xl" />
           </div>
           <h1 className="text-5xl font-bold text-asinp-laranja mb-2">
             ASINP Apoio
@@ -354,12 +364,12 @@ const RegisterScreen = ({ auth, db, onSwitchToLogin }) => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gray-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div className="min-h-screen w-full bg-gray-50 flex items-center justify-center p-4 pt-12 overflow-y-auto">
       <div className="w-full max-w-md my-8">
         {/* Logo e Título */}
         <div className="text-center mb-8 animate-fade-in">
-          <div className="w-24 h-24 bg-asinp-verde rounded-full mx-auto mb-6 flex items-center justify-center shadow-2xl animate-bounce-slow">
-            <span className="text-5xl">✨</span>
+          <div className="mx-auto mb-4 flex items-center justify-center">
+            <AsinpLogo size="text-4xl" />
           </div>
           <h1 className="text-5xl font-bold text-asinp-laranja mb-2">
             Criar Conta

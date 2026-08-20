@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "./ChatIA.css";
 
 // Número da equipe ASINP para atendimento humano via WhatsApp
